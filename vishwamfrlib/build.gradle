@@ -50,6 +50,7 @@ dependencies {
     javadocDeps 'com.android.support:appcompat-v7:25.4.0'
     testImplementation 'junit:junit:4.12'
     compile "com.android.support:support-annotations:25.2.0"
+    compile "com.google.android.gms:play-services:12.0.1"
     javadocDeps "com.android.support:support-annotations:25.2.0"
 
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
