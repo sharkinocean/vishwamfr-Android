@@ -1,6 +1,7 @@
 package com.sukshi.vishwamfrlib;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.util.SparseArray;
@@ -13,9 +14,32 @@ import com.google.android.gms.vision.face.FaceDetector;
  * Created by reenath on 22/05/18.
  */
 
-public class FaceCrop extends Activity{
+public class FaceCrop   {
 
-    public void detectFace( Bitmap myBitmap){
+
+    private Context context;
+    private Bitmap bitmap;
+    int nx1 = 0;
+    int ny1 = 0;
+    int nw1 = 0;
+    int nh1 = 0;
+
+    private FaceCrop(Context context, Bitmap bitmap) {
+        this.bitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+        this.context = context;
+        cropFace();
+    }
+
+    public void cropFace(){
+
+        if (bitmap == null) {
+            throw new RuntimeException("Bitmap should not be null");
+        }
+
+        //context should not be null
+        if (context == null) {
+            throw new RuntimeException("Context should not be null");
+        }
 
         //Create a Paint object for drawing with
 /*        Paint myRectPaint = new Paint();
@@ -24,27 +48,23 @@ public class FaceCrop extends Activity{
         myRectPaint.setStyle(Paint.Style.STROKE);*/
 
         //Create a Canvas object for drawing on
-        Bitmap tempBitmap = Bitmap.createBitmap(myBitmap.getWidth(), myBitmap.getHeight(), Bitmap.Config.RGB_565);
+        Bitmap tempBitmap = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.RGB_565);
         Canvas tempCanvas = new Canvas(tempBitmap);
-        tempCanvas.drawBitmap(myBitmap, 0, 0, null);
+        tempCanvas.drawBitmap(bitmap, 0, 0, null);
 
         //Detect the Faces
-        FaceDetector faceDetector = new FaceDetector.Builder(getApplicationContext()).build();
+        FaceDetector faceDetector = new FaceDetector.Builder(context).setTrackingEnabled(false).build();
 
         //!!!
         //Cannot resolve method setTrackingEnabled(boolean)
         //skip for now
         //faceDetector.setTrackingEnabled(false);
 
-        Frame frame = new Frame.Builder().setBitmap(myBitmap).build();
+        Frame frame = new Frame.Builder().setBitmap(bitmap).build();
         SparseArray<Face> faces = faceDetector.detect(frame);
-        int nx1 = 0;
-        int ny1 = 0;
-        int nw1 = 0;
-        int nh1 = 0;
+
         //Draw Rectangles on the Faces
         for(int i=0; i<faces.size(); i++) {
-            //   Log.e("William" , "faces.size()" + faces.size());
             Face thisFace = faces.valueAt(i);
             float x1 = thisFace.getPosition().x;
             float y1 = thisFace.getPosition().y;
@@ -59,10 +79,24 @@ public class FaceCrop extends Activity{
             //tempCanvas.drawRoundRect(new RectF(x1, y1, x2, y2), 10, 10, myRectPaint);
         }
 
-        Bitmap te = Bitmap.createBitmap(myBitmap, nx1, ny1, nw1, nh1);
+
+        getFaceCroppedBitmap();
+
+
+    }
+    public Bitmap getFaceCroppedBitmap() {
+        //we can't get cropped bitmap is bitmap is null or cropArea is null
+        if (bitmap == null ) {
+            throw new RuntimeException("Initialize FaceDetectionCrop using FaceDetectionCrop.initialize() before using it.");
+        }
+        //crop bitmap with calculated cropArea
+        return Bitmap.createBitmap(bitmap, nx1, ny1, nw1, nh1);
+    }
 
 
 
+    public static synchronized FaceCrop faceCrop(Context context, Bitmap bitmap) {
+        return new FaceCrop(context, bitmap);
     }
 
 }
