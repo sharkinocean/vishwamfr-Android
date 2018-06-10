@@ -68,6 +68,8 @@ public class FaceRec {
         float[] faceEncodings = jniBitmapFaceEncoding(bitmap);
         if (faceEncodings.length % embedding_size != 0) {
             Log.e(log_tag, "error in calculating embeddings");
+
+
         }
         ArrayList<ArrayList<Float> > result = new ArrayList<ArrayList<Float> >();
 
