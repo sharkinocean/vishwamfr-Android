@@ -1,12 +1,17 @@
 package com.tzutalin.dlib;
 
+import android.app.Activity;
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.AsyncTask;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 import android.util.Log;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +23,7 @@ import java.util.List;
  */
 public class FaceRec {
     private static final String TAG = "dlib";
+    private Activity activity;
 
     // accessed by native methods
     @SuppressWarnings("unused")
@@ -36,6 +42,10 @@ public class FaceRec {
         }
     }
 
+
+    public FaceRec(Activity activity){
+        this.activity=activity;
+    }
     public FaceRec(String sample_dir_path) {
         dir_path = sample_dir_path;
         jniInit(dir_path);
@@ -61,6 +71,47 @@ public class FaceRec {
         VisionDetRet[] detRets = jniBitmapDetect(bitmap);
         return Arrays.asList(detRets);
     }
+
+
+
+    private class initRecAsync extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected void onPreExecute() {
+            Log.d(TAG, "initRecAsync onPreExecute called");
+
+            super.onPreExecute();
+        }
+
+        protected Void doInBackground(Void... args) {
+            // create dlib_rec_example directory in sd card and copy model files
+            File folder = new File(Constants.getDLibDirectoryPath());
+            boolean success = false;
+            if (!folder.exists()) {
+                success = folder.mkdirs();
+            }
+            if (success) {
+                File image_folder = new File(Constants.getDLibImageDirectoryPath());
+                image_folder.mkdirs();
+                if (!new File(Constants.getFaceShapeModelPath()).exists()) {
+                    FileUtils.copyFileFromRawToOthers(activity,  R.raw.shape_predictor_5_face_landmarks, Constants.getFaceShapeModelPath());
+                }
+                if (!new File(Constants.getFaceDescriptorModelPath()).exists()) {
+                    FileUtils.copyFileFromRawToOthers(activity, R.raw.dlib_face_recognition_resnet_model_v1, Constants.getFaceDescriptorModelPath());
+                }
+            } else {
+                //Log.d(TAG, "error in setting dlib_rec_example directory");
+            }
+           FaceRec mFaceRec = new FaceRec(Constants.getDLibDirectoryPath());
+            mFaceRec.train();
+            return null;
+        }
+
+        protected void onPostExecute(Void result) {
+
+        }
+    }
+
 
     @Nullable
     @WorkerThread
