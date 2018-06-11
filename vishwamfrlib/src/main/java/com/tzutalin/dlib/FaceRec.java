@@ -40,6 +40,9 @@ public class FaceRec {
         } catch (UnsatisfiedLinkError e) {
             Log.e(TAG, "library not found");
         }
+
+
+
     }
 
 
@@ -56,6 +59,13 @@ public class FaceRec {
     public void train() {
         jniTrain();
         return;
+    }
+
+
+    @Nullable
+    public void copyrawFiles (){
+        new initRecAsync().execute();
+
     }
 
     @Nullable
