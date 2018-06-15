@@ -110,7 +110,7 @@ public class FaceRec {
      Bitmap scaledBitmap =    Bitmap.createScaledBitmap(bitmap, 300, 300, true);
 
 
-       //Detect the Faces
+      /* //Detect the Faces
         FaceDetector faceDetector = new FaceDetector.Builder(context1).setTrackingEnabled(false).build();
 
         //!!!
@@ -139,9 +139,9 @@ public class FaceRec {
         }
 
 
-        croppedBitmap = Bitmap.createBitmap(scaledBitmap, nx1,ny1,nw1,nh1);
+        croppedBitmap = Bitmap.createBitmap(scaledBitmap, nx1,ny1,nw1,nh1);*/
 
-        float[] faceEncodings = jniBitmapFaceEncoding(croppedBitmap);
+        float[] faceEncodings = jniBitmapFaceEncoding(scaledBitmap);
         if (faceEncodings.length % embedding_size != 0) {
             Log.e(log_tag, "error in calculating embeddings");
         }
