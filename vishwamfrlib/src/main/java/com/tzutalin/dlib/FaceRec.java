@@ -4,12 +4,18 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.os.AsyncTask;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.WorkerThread;
 import android.util.Log;
+import android.util.SparseArray;
+
+import com.google.android.gms.vision.Frame;
+import com.google.android.gms.vision.face.Face;
+import com.google.android.gms.vision.face.FaceDetector;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -24,6 +30,14 @@ import java.util.List;
 public class FaceRec {
     private static final String TAG = "dlib";
     private Activity activity;
+    private Context context1;
+    private Bitmap tempBitmap;
+    int nx1 = 0;
+    int ny1 = 0;
+    int nw1 = 0;
+    int nh1 = 0;
+
+    private Bitmap croppedBitmap;
 
     // accessed by native methods
     @SuppressWarnings("unused")
@@ -45,13 +59,21 @@ public class FaceRec {
 
     }
 
+    public FaceRec (Context context){
 
-    public FaceRec(Activity activity){
-        this.activity=activity;
+        this.context1 = context;
+
     }
-    public FaceRec(String sample_dir_path) {
+
+
+    public FaceRec(Activity activity ){
+        this.activity=activity;
+
+    }
+    public FaceRec(String sample_dir_path, Context context) {
         dir_path = sample_dir_path;
         jniInit(dir_path);
+        this.context1 = context;
     }
 
     @Nullable
@@ -62,11 +84,6 @@ public class FaceRec {
     }
 
 
-    @Nullable
-    public void copyrawFiles (){
-        new initRecAsync().execute();
-
-    }
 
     @Nullable
     @WorkerThread
@@ -84,53 +101,53 @@ public class FaceRec {
 
 
 
-    private class initRecAsync extends AsyncTask<Void, Void, Void> {
-
-        @Override
-        protected void onPreExecute() {
-            Log.d(TAG, "initRecAsync onPreExecute called");
-
-            super.onPreExecute();
-        }
-
-        protected Void doInBackground(Void... args) {
-            // create dlib_rec_example directory in sd card and copy model files
-            File folder = new File(Constants.getDLibDirectoryPath());
-            boolean success = false;
-            if (!folder.exists()) {
-                success = folder.mkdirs();
-            }
-            if (success) {
-                File image_folder = new File(Constants.getDLibImageDirectoryPath());
-                image_folder.mkdirs();
-                if (!new File(Constants.getFaceShapeModelPath()).exists()) {
-                    FileUtils.copyFileFromRawToOthers(activity,  R.raw.shape_predictor_5_face_landmarks, Constants.getFaceShapeModelPath());
-                }
-                if (!new File(Constants.getFaceDescriptorModelPath()).exists()) {
-                    FileUtils.copyFileFromRawToOthers(activity, R.raw.dlib_face_recognition_resnet_model_v1, Constants.getFaceDescriptorModelPath());
-                }
-            } else {
-                //Log.d(TAG, "error in setting dlib_rec_example directory");
-            }
-           FaceRec mFaceRec = new FaceRec(Constants.getDLibDirectoryPath());
-            mFaceRec.train();
-            return null;
-        }
-
-        protected void onPostExecute(Void result) {
-
-        }
-    }
 
 
     @Nullable
     @WorkerThread
     public ArrayList<ArrayList<Float> > get_face_encoding(@NonNull Bitmap bitmap) {
-        float[] faceEncodings = jniBitmapFaceEncoding(bitmap);
+
+       /* tempBitmap = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.RGB_565);
+        Canvas tempCanvas = new Canvas(tempBitmap);
+        tempCanvas.drawBitmap(bitmap, 0, 0, null);
+*/
+     Bitmap scaledBitmap =    Bitmap.createScaledBitmap(bitmap, 300, 300, true);
+
+
+       //Detect the Faces
+        FaceDetector faceDetector = new FaceDetector.Builder(context1).setTrackingEnabled(false).build();
+
+        //!!!
+        //Cannot resolve method setTrackingEnabled(boolean)
+        //skip for now
+        //faceDetector.setTrackingEnabled(false);
+
+        Frame frame = new Frame.Builder().setBitmap(scaledBitmap).build();
+        SparseArray<Face> faces = faceDetector.detect(frame);
+
+        //Draw Rectangles on the Faces
+        for(int i=0; i<faces.size(); i++) {
+            Face thisFace = faces.valueAt(i);
+            float x1 = thisFace.getPosition().x;
+            float y1 = thisFace.getPosition().y;
+            float x2 = x1 + thisFace.getWidth();
+            float y2 = y1 + thisFace.getHeight();
+            float w1 = thisFace.getWidth();
+            float h1 = thisFace.getHeight();
+            nx1 = (int)x1;
+            ny1 = (int)y1;
+            nw1 = (int)w1;
+            nh1 = (int)h1;
+
+            //tempCanvas.drawRoundRect(new RectF(x1, y1, x2, y2), 10, 10, myRectPaint);
+        }
+
+
+        croppedBitmap = Bitmap.createBitmap(scaledBitmap, nx1,ny1,nw1,nh1);
+
+        float[] faceEncodings = jniBitmapFaceEncoding(croppedBitmap);
         if (faceEncodings.length % embedding_size != 0) {
             Log.e(log_tag, "error in calculating embeddings");
-
-
         }
         ArrayList<ArrayList<Float> > result = new ArrayList<ArrayList<Float> >();
 

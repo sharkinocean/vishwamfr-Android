@@ -32,7 +32,7 @@ public class FaceCrop   {
     public void cropFace(){
 
         if (bitmap == null) {
-            throw new RuntimeException("Bitmap should not be null");
+            throw new RuntimeException("Image should not be null");
         }
 
         //context should not be null
